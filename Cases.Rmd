@@ -1,0 +1,221 @@
+---
+title: "Cases"
+author: "Jens Hesel"
+date: "18 mar 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Packages
+```{r}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(readr)
+```
+
+Loads data
+```{r}
+vital_sign_sample <- read_csv("//rsyd.net/appl$/_Shared/OUH/OpenAnalyze/ProjectData/OP00904/Jens/Data/vital_sign_final.csv")
+```
+
+The random patient
+```{r}
+vital_sign_sample %>%
+  filter(encounterId==54043611) -> random
+```
+
+Shows the four vital signs
+```{r}
+random %>%
+  distinct(time, rr, pr, mBP, spO2) -> random
+```
+
+Plots the random patients vital signs
+```{r}
+random$pr <- as.numeric(as.character(test$pr))
+random$rr <- as.numeric(as.character(test$rr))
+random$spO2 <- as.numeric(as.character(test$spO2))
+
+#Plotter rr ift tiden 
+ggplot(data=random, aes(x=time, y=value, color=variable)) + 
+  geom_line(aes(y=pr, col="PR")) +
+  geom_line(aes(y=rr, col="RR")) +
+  geom_line(aes(y=spO2, col="spO2"))
+```
+
+
+Case 1 - Many measurements
+```{r}
+vital_sign_sample %>%
+  filter(encounterId==53104884) -> grouped_data1
+
+grouped_data1$pr <- as.numeric(as.character(grouped_data1$pr))
+grouped_data1$rr <- as.numeric(as.character(grouped_data1$rr))
+grouped_data1$mBP <- as.numeric(as.character(grouped_data1$mBP))
+grouped_data1$spO2 <- as.numeric(as.character(grouped_data1$spO2))
+
+
+ggplot(data=grouped_data1, aes(x=time, y=value, color=variable)) + 
+  geom_line(aes(y=pr, col="rr")) +
+  geom_line(aes(y=rr, col="pr")) +
+  geom_line(aes(y=spO2, col="spO2"))
+
+```
+
+
+The Patient arrived at:
+```{r}
+arrival_time1 <- encounter_sample$arrivalTime[encounter_sample$encounter_id==53104884]
+arrival_time1 <- na.omit(arrival_time)
+arrival_time1
+```
+
+
+The patient was discharged at:
+```{r}
+discharge_time1 <- encounter_sample$discharge_time[encounter_sample$encounter_id==53104884]
+discharge_time1 <- na.omit(discharge_time)
+discharge_time1
+```
+
+
+The patient was amitted for a total time of:
+```{r}
+difftime(discharge_time1, arrival_time1)
+```
+
+
+The patient have the total number of measurements
+```{r}
+grouped_data1 %>%
+  group_by(encounterId) %>%
+  mutate(number_of_measures=n()) -> grouped_data1
+  
+#Isolerer patient ID og tilhørende antal målinger
+grouped_data1 %>%
+  distinct(encounterId, number_of_measures) %>%
+  arrange(desc(number_of_measures)) -> grouped_data1
+
+grouped_data1$number_of_measures[grouped_data1$encounterId==53104884]
+```
+
+
+
+Case 2 - few measurements
+```{r}
+vital_sign_sample %>%
+  filter(encounterId==53203607) -> grouped_data2
+
+grouped_data2$pr <- as.numeric(as.character(grouped_data2$pr))
+grouped_data2$rr <- as.numeric(as.character(grouped_data2$rr))
+grouped_data2$mBP <- as.numeric(as.character(grouped_data2$mBP))
+grouped_data2$spO2 <- as.numeric(as.character(grouped_data2$spO2))
+
+
+ggplot(data=grouped_data2, aes(x=time, y=value, color=variable)) + 
+  geom_line(aes(y=pr, col="rr")) +
+  geom_line(aes(y=rr, col="pr")) +
+  geom_line(aes(y=spO2, col="spO2"))
+```
+
+
+The Patient arrived at:
+```{r}
+arrival_time2 <- encounter_sample$arrivalTime[encounter_sample$encounter_id==53203607]
+arrival_time2 <- na.omit(arrival_time)
+arrival_time2
+```
+
+
+The patient was discharged at:
+```{r}
+discharge_time2 <- encounter_sample$discharge_time[encounter_sample$encounter_id==53203607]
+discharge_time2 <- na.omit(discharge_time)
+discharge_time2
+```
+
+
+The patient was amitted for a total time of:
+```{r}
+difftime(discharge_time2, arrival_time2)
+```
+
+
+The patient have the total number of measurements
+```{r}
+grouped_data2 <- vital_sign_sample
+
+grouped_data2 %>%
+  group_by(encounterId) %>%
+  mutate(number_of_measures=n()) -> grouped_data2
+  
+#Isolerer patient ID og tilhørende antal målinger
+grouped_data2 %>%
+  distinct(encounterId, number_of_measures) %>%
+  arrange(desc(number_of_measures)) -> grouped_data2
+
+grouped_data2$number_of_measures[grouped_data2$encounterId==53203607]
+```
+
+
+
+Case 3
+- Gaps in measurements
+```{r}
+vital_sign_sample %>%
+  filter(encounterId==53069837) -> grouped_data3
+
+grouped_data3$pr <- as.numeric(as.character(grouped_data3$pr))
+grouped_data3$rr <- as.numeric(as.character(grouped_data3$rr))
+grouped_data3$mBP <- as.numeric(as.character(grouped_data3$mBP))
+grouped_data3$spO2 <- as.numeric(as.character(grouped_data3$spO2))
+
+
+ggplot(data=grouped_data3, aes(x=time, y=value, color=variable)) + 
+  geom_line(aes(y=pr, col="rr")) +
+  geom_line(aes(y=rr, col="pr")) +
+  geom_line(aes(y=spO2, col="spO2"))
+```
+
+
+The Patient arrived at:
+```{r}
+arrival_time3 <- encounter_sample$arrivalTime[encounter_sample$encounter_id==53069837]
+arrival_time3 <- na.omit(arrival_time)
+arrival_time3
+```
+
+
+The patient was discharged at:
+```{r}
+discharge_time3 <- encounter_sample$discharge_time[encounter_sample$encounter_id==53069837]
+discharge_time3 <- na.omit(discharge_time)
+discharge_time3
+```
+
+
+The patient was amitted for a total time of:
+```{r}
+difftime(discharge_time3, arrival_time3)
+```
+
+
+The patient have the total number of measurements
+```{r}
+grouped_data3 <- vital_sign_sample
+
+grouped_data3 %>%
+  group_by(encounterId) %>%
+  mutate(number_of_measures=n()) -> grouped_data3
+  
+grouped_data3 %>%
+  distinct(encounterId, number_of_measures) %>%
+  arrange(desc(number_of_measures)) -> grouped_data3
+
+grouped_data3$number_of_measures[grouped_data3$encounterId==53069837]
+```

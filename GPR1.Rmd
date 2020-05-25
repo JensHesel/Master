@@ -1,0 +1,272 @@
+---
+title: "hetGP"
+author: "Jens Hesel"
+date: "30/3/2020"
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Path to packages on OPEN
+```{r}
+.libPaths("P:/OP00904/R_pakker")
+```
+
+Loads packages
+```{r}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(readr)
+library(ggplot2)
+library(hetGP)
+library(MASS)
+library(xts)
+library(tsbox)
+
+```
+
+
+
+///////////////////////////////////////////////////////////////////////////
+Prepares data
+//////////////////////////////////////////////////////////////////////////
+
+Loads data
+```{r}
+vital_sign_sample <- read_csv("//rsyd.net/appl$/_Shared/OUH/OpenAnalyze/ProjectData/OP00904/Jens/Data/vital_sign_final.csv")
+encounter_sample <- read_csv("//rsyd.net/appl$/_Shared/OUH/OpenAnalyze/ProjectData/OP00904/Jens/Data/encounterOverview.csv")
+```
+
+Patients ID numbers
+case1 53104884
+case2 53203607
+case3 53069837
+
+Selects patients
+```{r}
+id <- 53104884
+
+vital_sign_sample %>% 
+  filter(encounterId==id) -> mydata
+```
+
+
+Makes vital signs numerical 
+```{r}
+
+mydata$pr <- as.numeric(as.character(mydata$pr))
+
+```
+
+
+Removes NULL values
+```{r}
+mydata %>%
+  filter(!str_detect(pr, "NULL")) -> mydata
+```
+
+
+Plots PR according to time
+```{r}
+ggplot(aes(x=time, y=pr), data=mydata) + geom_line()
+```
+
+
+Selects control points
+```{r}
+con <- c("2018-06-13 20:04:33", "2018-06-14 00:26:33","2018-06-14 01:20:33","2018-06-14 06:21:32","2018-06-14 13:31:32" )
+
+
+#case1 "2018-06-13 20:04:33", "2018-06-14 00:26:33","2018-06-14 01:20:33","2018-06-14 #06:21:32","2018-06-14 13:31:32"
+#case2 "2018-06-15 15:51:30", "2018-06-15 16:01:30","2018-06-15 17:22:30","2018-06-15 #18:35:30","2018-06-15 20:36:30"
+#case3 "2018-06-13 01:31:36", "2018-06-13 10:48:34","2018-06-13 12:52:34","2018-06-13 #14:50:34","2018-06-13 16:26:33"
+
+
+mydf <- data.frame(con)
+```
+
+
+
+Checks wether it is POSIxct, has to be
+```{r}
+class(mydf$con)
+```
+
+Makes the data points POSIXct
+```{r}
+mydf$con <- as.POSIXct(as.factor(mydf$con))
+```
+
+
+Isolates pr and time
+```{r}
+mydata %>%
+  distinct(pr, time) -> mydata2
+```
+
+
+
+Summary of the time of the patients stay
+```{r}
+summary(mydata2$time)
+```
+
+
+Divides data in test og train 
+```{r}
+set.seed(123) 
+sample_size <- floor(0.55*nrow(mydata2))
+
+sample <- sample(seq_len(nrow(mydata2)), size=sample_size)
+train <- mydata2[sample,]
+test <- mydata[-sample,]
+```
+
+
+Define the data that GPR is performed on
+```{r}
+work_data <- test
+```
+
+
+Define min and max used for normalization of time
+```{r}
+min <- as.numeric(min(mydata2$time))
+max <- as.numeric(max(mydata2$time))
+```
+
+
+Normalize time needed for GPR
+```{r}
+
+work_data$num_time <- 0
+
+for(i in 1:length(work_data$time)){
+  
+  current_time <- work_data$time[i]
+  
+  top <- as.numeric(current_time)-min
+  bottom <- max-min
+  
+  num_time <- top/bottom
+  
+  work_data$num_time[i] <- num_time
+  
+  
+  current_time <- 0
+  num_time <- 0
+}
+
+```
+
+
+
+
+Normalize timeinterval based on the control points
+```{r}
+conmatrix <- matrix(nrow = 5, ncol = 1)
+
+for (i in 1:length(con)) {
+  
+  current <- mydf$con[i]
+  
+  tp <- as.numeric(current) - min
+  bm <- max-min
+  
+  newtime <- tp/bm
+  
+  conmatrix[i,1] <- abs(newtime)
+  
+  current <- 0
+  newtime <- 0
+  
+}
+```
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////
+GPR done using mleHetGP
+///////////////////////////////////////////////////////////////////////
+
+Sets seed for random number generator. 
+```{r}
+set.seed(32)
+```
+
+Initialize data and plots normalized time and pr 
+```{r}
+myx <- matrix(work_data$num_time, ncol=1)
+myz <- work_data$pr
+plot(myx, myz, ylim = c(20, 150), ylab = 'PR', xlab = "time")
+```
+
+
+Summary of rr
+```{r}
+summary(myz)
+```
+
+
+Makes the model for GPR
+```{r}
+
+settings <- list(return.hom = TRUE) # makes homoskedastic model used for training
+
+model <- mleHetGP(X = myx, Z = myz,lower = 0.1, upper = 50,  covtype = "Matern5_2", settings = settings)
+
+
+```
+
+
+View of the fit from the model
+```{r}
+summary(model)
+```
+
+
+Plots the model
+```{r}
+plot(myx, myz, ylim = c(20, 150), ylab = 'PR', xlab = "time") #hollow points
+
+# Create a prediction grid and obtain predictions
+xgrid <- matrix(seq(0, 10, length.out = 500), ncol = 1)
+predictions <- predict(x = xgrid, object = model)
+
+# Display mean predictive surface
+lines(xgrid, predictions$mean, col = 'red', lwd = 2)
+
+# Display 95% confidence intervals, red dotted lines
+lines(xgrid, qnorm(0.05, predictions$mean, sqrt(predictions$sd2)), col = 2, lty = 2)
+lines(xgrid, qnorm(0.95, predictions$mean, sqrt(predictions$sd2)), col = 2, lty = 2)
+
+# Display 95% prediction intervals, green dotted lines
+lines(xgrid, qnorm(0.05, predictions$mean, sqrt(predictions$sd2 + predictions$nugs)),
+col = 3, lty = 2)
+lines(xgrid, qnorm(0.95, predictions$mean, sqrt(predictions$sd2 + predictions$nugs)),
+col = 3, lty = 2)
+
+```
+
+
+
+Predicts values 
+```{r}
+gpr_data <- predict(object=model, x= conmatrix)
+gpr_data
+```
+
+
+
+
+
+

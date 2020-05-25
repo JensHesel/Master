@@ -1,0 +1,205 @@
+---
+title: "Data overall"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+.libPaths("P:/OP00904/R_pakker")
+```
+
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(xts)
+library(tsbox)
+library(readr)
+```
+
+
+```{r}
+vital_sign_sample <- read_csv("//rsyd.net/appl$/_Shared/OUH/OpenAnalyze/ProjectData/OP00904/Jens/Data/vital_sign_final.csv")
+encounter_sample <- read_csv("//rsyd.net/appl$/_Shared/OUH/OpenAnalyze/ProjectData/OP00904/Jens/Data/encounterOverview.csv")
+```
+
+
+
+
+Number of patients in encounter sample
+```{r}
+length(encounter_sample$encounter_id)
+```
+
+Group by id and count number of measures
+```{r}
+vital_sign_sample %>%
+  group_by(encounterId) %>%
+  mutate(number_of_measures=n()) -> grouped_data
+```
+
+Removes duplicates of ID's
+```{r}
+grouped_data %>%
+  distinct(encounterId, .keep_all = TRUE) -> grouped_data
+```
+
+Number of patients in Vital sign sample
+```{r}
+length(grouped_data$encounterId)
+```
+
+
+///////////////////////////////////////////////////////
+Vital signs descriptive statistics
+///////////////////////////////////////////////////////
+```{r}
+vital_sign_sample -> mydata
+
+mydata %>%
+  distinct(encounterId, mBP) -> mydata2
+
+mydata2$mBP <- as.numeric(mydata2$mBP)
+```
+
+Removes NULL values
+```{r}
+mydata2 <- na.omit(mydata2)
+```
+
+Removes duplicates so each ID only once
+```{r}
+mydata2 %>%
+  distinct(encounterId, .keep_all = TRUE) -> grouped_data2
+```
+
+Overview 
+```{r}
+summary(grouped_data2$mBP)
+```
+
+Overview of length of stay
+```{r}
+summary(abs(encounter_sample$length_of_stay_minutes))
+```
+
+
+
+////////////////////////////////////////////////////////////////////
+Mean & Median
+////////////////////////////////////////////////////////////////////
+Makes length of stay numeric
+```{r}
+encounter_sample$length_of_stay_minutes <- as.numeric(encounter_sample$length_of_stay_minutes)
+```
+
+Selects patients admitted between 15 hours and 30 hours
+```{r}
+encounter_sample %>%
+  filter(length_of_stay_minutes > 900) %>%
+  filter(length_of_stay_minutes < 1800) -> timedata1
+```
+
+Select patients for group1 based on few measurements
+```{r}
+timedata1 %>%
+  filter(m_load < 0.5) %>%
+  filter(m_load > 0.1)-> group1
+```
+
+Selects patients for group2 based on many measures
+```{r}
+timedata1 %>%
+  filter(m_load > 0.5) -> group2
+```
+
+
+Initialize dataframe and values
+```{r}
+dfID1 <- group1$encounter_id #change for group2
+mylength <- length(dfID1)
+mydf <- data.frame(matrix(nrow = length(dfID1), ncol = 3))
+names(mydf)[1] <- "Id"
+names(mydf)[2] <- "RMSEmean"
+names(mydf)[3] <- "RMSEmedian"
+
+```
+
+Prepares data
+```{r}
+vital_sign_sample -> loaded_data
+
+loaded_data$spO2 <- as.numeric(loaded_data$spO2)
+loaded_data$rr <- as.numeric(loaded_data$rr)
+loaded_data$pr <- as.numeric(loaded_data$pr)
+
+loaded_data %>%
+  filter(!str_detect(spO2, "NULL")) -> loaded_data #current vital sign
+```
+
+
+
+Calculates RMSE all patients in the group
+```{r}
+mycounter <- 0
+
+for (i in 1:mylength) {
+  
+  plusplus(mycounter)
+  id <- dfID1[i]
+  
+  currentid <- id
+
+loaded_data %>%
+  filter(encounterId==currentid) -> data
+
+require(xts)
+raw_data <- xts(data$spO2, as.POSIXct(data$time, 
+                                              format="%d/%m/%Y %H:%M:%S"))
+
+if (length(raw_data)==0) {next}
+else{
+
+raw_data <- na.omit(raw_data)
+
+#Calculates mean and median
+ep <- endpoints(raw_data, on = "hours", k=1)
+mean <- period.apply(raw_data, INDEX = ep, FUN = mean)
+median <- period.apply(raw_data, INDEX = ep, FUN = median)
+
+#Calculates differences
+diffmean <- raw_data - mean
+diffmean <- as.numeric(diffmean)
+diffmean <- abs(diffmean)
+diffmedian <- raw_data - median
+diffmedian <- as.numeric(diffmedian)
+diffmedian <- abs(diffmedian)
+
+#calculates RMSE
+RMSEmean <- RMSE(diffmean)
+RMSEmedian <- RMSE(diffmedian)
+
+#Puts data into dataframe
+mydf$Id[mycounter] <- currentid
+mydf$RMSEmean[mycounter] <- RMSEmean
+mydf$RMSEmedian[mycounter] <- RMSEmedian
+}
+}
+```
+
+Calculates overall RMSE for mean
+```{r}
+mytest <- na.omit(mydf)
+
+mean(mytest$RMSEmean)
+```
+
+Calculates overall RMSE for median
+```{r}
+mean(mytest$RMSEmedian)
+```
+

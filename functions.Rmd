@@ -1,0 +1,36 @@
+---
+title: "Functions"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Makes function for the plusplus operator
+```{r}
+plusplus <- function(x)
+{
+ eval.parent(substitute(x <- x + 1))
+}
+```
+
+
+Makes RMSE function
+```{r}
+RMSE <- function(diff){
+  sqrt(mean(diff^2))
+}
+```
+
+
+
+
+
+
+
+
+
+
