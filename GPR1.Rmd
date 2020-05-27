@@ -44,14 +44,11 @@ vital_sign_sample <- read_csv("//rsyd.net/appl$/_Shared/OUH/OpenAnalyze/ProjectD
 encounter_sample <- read_csv("//rsyd.net/appl$/_Shared/OUH/OpenAnalyze/ProjectData/OP00904/Jens/Data/encounterOverview.csv")
 ```
 
-Patients ID numbers
-case1 53104884
-case2 53203607
-case3 53069837
+
 
 Selects patients
 ```{r}
-id <- 53104884
+id <- 1111
 
 vital_sign_sample %>% 
   filter(encounterId==id) -> mydata
