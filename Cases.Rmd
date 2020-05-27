@@ -26,7 +26,7 @@ vital_sign_sample <- read_csv("//rsyd.net/appl$/_Shared/OUH/OpenAnalyze/ProjectD
 The random patient
 ```{r}
 vital_sign_sample %>%
-  filter(encounterId==54043611) -> random
+  filter(encounterId==1111) -> random
 ```
 
 Shows the four vital signs
@@ -52,7 +52,7 @@ ggplot(data=random, aes(x=time, y=value, color=variable)) +
 Case 1 - Many measurements
 ```{r}
 vital_sign_sample %>%
-  filter(encounterId==53104884) -> grouped_data1
+  filter(encounterId==1111) -> grouped_data1
 
 grouped_data1$pr <- as.numeric(as.character(grouped_data1$pr))
 grouped_data1$rr <- as.numeric(as.character(grouped_data1$rr))
@@ -70,7 +70,7 @@ ggplot(data=grouped_data1, aes(x=time, y=value, color=variable)) +
 
 The Patient arrived at:
 ```{r}
-arrival_time1 <- encounter_sample$arrivalTime[encounter_sample$encounter_id==53104884]
+arrival_time1 <- encounter_sample$arrivalTime[encounter_sample$encounter_id==1111]
 arrival_time1 <- na.omit(arrival_time)
 arrival_time1
 ```
@@ -78,7 +78,7 @@ arrival_time1
 
 The patient was discharged at:
 ```{r}
-discharge_time1 <- encounter_sample$discharge_time[encounter_sample$encounter_id==53104884]
+discharge_time1 <- encounter_sample$discharge_time[encounter_sample$encounter_id==1111]
 discharge_time1 <- na.omit(discharge_time)
 discharge_time1
 ```
@@ -109,7 +109,7 @@ grouped_data1$number_of_measures[grouped_data1$encounterId==53104884]
 Case 2 - few measurements
 ```{r}
 vital_sign_sample %>%
-  filter(encounterId==53203607) -> grouped_data2
+  filter(encounterId==1111) -> grouped_data2
 
 grouped_data2$pr <- as.numeric(as.character(grouped_data2$pr))
 grouped_data2$rr <- as.numeric(as.character(grouped_data2$rr))
@@ -126,7 +126,7 @@ ggplot(data=grouped_data2, aes(x=time, y=value, color=variable)) +
 
 The Patient arrived at:
 ```{r}
-arrival_time2 <- encounter_sample$arrivalTime[encounter_sample$encounter_id==53203607]
+arrival_time2 <- encounter_sample$arrivalTime[encounter_sample$encounter_id==1111]
 arrival_time2 <- na.omit(arrival_time)
 arrival_time2
 ```
@@ -134,7 +134,7 @@ arrival_time2
 
 The patient was discharged at:
 ```{r}
-discharge_time2 <- encounter_sample$discharge_time[encounter_sample$encounter_id==53203607]
+discharge_time2 <- encounter_sample$discharge_time[encounter_sample$encounter_id==1111]
 discharge_time2 <- na.omit(discharge_time)
 discharge_time2
 ```
@@ -168,7 +168,7 @@ Case 3
 - Gaps in measurements
 ```{r}
 vital_sign_sample %>%
-  filter(encounterId==53069837) -> grouped_data3
+  filter(encounterId==1111) -> grouped_data3
 
 grouped_data3$pr <- as.numeric(as.character(grouped_data3$pr))
 grouped_data3$rr <- as.numeric(as.character(grouped_data3$rr))
@@ -185,7 +185,7 @@ ggplot(data=grouped_data3, aes(x=time, y=value, color=variable)) +
 
 The Patient arrived at:
 ```{r}
-arrival_time3 <- encounter_sample$arrivalTime[encounter_sample$encounter_id==53069837]
+arrival_time3 <- encounter_sample$arrivalTime[encounter_sample$encounter_id==1111]
 arrival_time3 <- na.omit(arrival_time)
 arrival_time3
 ```
@@ -193,7 +193,7 @@ arrival_time3
 
 The patient was discharged at:
 ```{r}
-discharge_time3 <- encounter_sample$discharge_time[encounter_sample$encounter_id==53069837]
+discharge_time3 <- encounter_sample$discharge_time[encounter_sample$encounter_id==1111]
 discharge_time3 <- na.omit(discharge_time)
 discharge_time3
 ```
